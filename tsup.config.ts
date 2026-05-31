@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'tsup';
+
+const version: string = JSON.parse(readFileSync('./package.json', 'utf8')).version;
 
 export default defineConfig({
   entry: {
@@ -9,6 +12,11 @@ export default defineConfig({
   target: 'node20',
   platform: 'node',
   outDir: 'dist',
+  // Bake the package.json version into the bundle so `--version` reports it.
+  // Stamp package.json from the git tag in CI before building a release.
+  define: {
+    __BUILD_VERSION__: JSON.stringify(version),
+  },
   clean: true,
   splitting: false,
   shims: false,
