@@ -8,6 +8,9 @@ describe('displayToolName', () => {
   it('maps the browser navigate tool to "Browser"', () => {
     expect(displayToolName('mcp_browser_browser_navigate')).toBe('Browser');
   });
+  it('maps load_skill to "Skill"', () => {
+    expect(displayToolName('load_skill')).toBe('Skill');
+  });
   it('passes unknown tools through unchanged', () => {
     expect(displayToolName('shell')).toBe('shell');
     expect(displayToolName('confirm_finding')).toBe('confirm_finding');
@@ -31,6 +34,9 @@ describe('primaryToolArg', () => {
     );
     expect(primaryToolArg('confirm_finding', { title: 'XSS' })).toBe('XSS');
   });
+  it('extracts the skill name for load_skill', () => {
+    expect(primaryToolArg('load_skill', { name: 'webvuln' })).toBe('webvuln');
+  });
   it('returns null for unknown tools or missing/empty fields', () => {
     expect(primaryToolArg('http', { url: 'x' })).toBeNull();
     expect(primaryToolArg('shell', {})).toBeNull();
@@ -51,8 +57,28 @@ describe('formatToolResult', () => {
       'requests: 0 · endpoints: 0 · snapshots: 0 · last activity: never',
     );
   });
+  it('renders load_skill as a compact skill summary', () => {
+    const skillBody = [
+      '# Skill: webvuln',
+      '',
+      '# Web vuln hunting playbook',
+      '',
+      'Full model-facing body.',
+      '',
+      '## 1. Triage the target',
+      '## 2. Known-CVE pass',
+    ].join('\n');
+    expect(formatToolResult('load_skill', skillBody)).toBe(
+      [
+        'loaded skill: webvuln',
+        'playbook: Web vuln hunting playbook',
+        'sections: 1. Triage the target · 2. Known-CVE pass',
+      ].join('\n'),
+    );
+  });
   it('falls back (null) for other tools or malformed JSON', () => {
     expect(formatToolResult('shell', '{}')).toBeNull();
     expect(formatToolResult('browser_capture_status', 'not json')).toBeNull();
+    expect(formatToolResult('load_skill', '# Missing skill heading')).toBeNull();
   });
 });

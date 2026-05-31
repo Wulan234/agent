@@ -4,6 +4,7 @@
 // names and args.
 
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
+  load_skill: 'Skill',
   mcp_browser_browser_navigate: 'Browser',
 };
 
@@ -29,6 +30,10 @@ export function primaryToolArg(name: string, args: Record<string, unknown>): str
     const severity = typeof args.severity === 'string' ? args.severity : '';
     if (title) return severity ? `(${severity}) ${title}` : title;
   }
+  if (name === 'load_skill') {
+    const skillName = args.name;
+    if (typeof skillName === 'string' && skillName) return skillName;
+  }
   return null;
 }
 
@@ -37,6 +42,9 @@ export function primaryToolArg(name: string, args: Record<string, unknown>): str
 // JSON result still goes to the model unchanged — this is display-only.
 // Returns null to fall back to the default tool-result view.
 export function formatToolResult(name: string, result: string): string | null {
+  if (name === 'load_skill') {
+    return formatLoadSkillResult(result);
+  }
   if (name === 'browser_capture_status') {
     try {
       const s = JSON.parse(result) as Record<string, unknown>;
@@ -48,4 +56,24 @@ export function formatToolResult(name: string, result: string): string | null {
     }
   }
   return null;
+}
+
+function formatLoadSkillResult(result: string): string | null {
+  const skill = result.match(/^# Skill:\s*(.+)$/m)?.[1]?.trim();
+  if (!skill) return null;
+
+  const headings = Array.from(result.matchAll(/^##\s+(.+)$/gm), (m) => m[1]?.trim()).filter(
+    Boolean,
+  );
+  const title = result
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.startsWith('# ') && !line.startsWith('# Skill:'))
+    ?.replace(/^#\s+/, '')
+    .trim();
+
+  const lines = [`loaded skill: ${skill}`];
+  if (title) lines.push(`playbook: ${title}`);
+  if (headings.length > 0) lines.push(`sections: ${headings.join(' · ')}`);
+  return lines.join('\n');
 }
