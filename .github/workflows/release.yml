@@ -1,8 +1,9 @@
 name: release
 
 # Cut a versioned release by pushing a version tag (e.g. `v0.1.0`).
-# Every push to main also refreshes the rolling `latest` release so
-# installers and `/update latest` can pick up fixes without a manual tag.
+# Every push to main also creates the next patch release (e.g. `v0.1.1`)
+# with generated release notes, so installers and `/update latest` pick up
+# a numbered release with a changelog.
 # Can also be run from the Actions tab (workflow_dispatch) for a dry-run rebuild.
 #
 # Pipeline: verify (full CI) -> cross-platform standalone binaries (Bun) ->
@@ -25,16 +26,59 @@ permissions:
   id-token: write # npm publish --provenance
 
 concurrency:
-  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
-env:
-  RELEASE_TAG: ${{ github.event.inputs.tag || (github.ref == 'refs/heads/main' && 'latest') || github.ref_name }}
-
 jobs:
+  prepare:
+    name: prepare release
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.version.outputs.release_tag }}
+      release_name: ${{ steps.version.outputs.release_name }}
+      should_publish_release: ${{ steps.version.outputs.should_publish_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+            git fetch --tags --force
+            latest="$(
+              git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname |
+              grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
+              head -n 1 ||
+              true
+            )"
+            if [[ -z "${latest}" ]]; then
+              latest="v0.1.0"
+            fi
+            IFS=. read -r major minor patch <<< "${latest#v}"
+            release_tag="v${major}.${minor}.$((patch + 1))"
+            should_publish_release="true"
+          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            release_tag="${GITHUB_REF_NAME}"
+            should_publish_release="true"
+          else
+            release_tag="${{ github.event.inputs.tag }}"
+            should_publish_release="false"
+          fi
+
+          {
+            echo "release_tag=${release_tag}"
+            echo "release_name=PentesterFlow ${release_tag}"
+            echo "should_publish_release=${should_publish_release}"
+          } >> "$GITHUB_OUTPUT"
+
   # Gate: never ship anything unless the full suite is green.
   verify:
     name: verify
+    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +93,7 @@ jobs:
   # Linux host, so the whole matrix runs without macOS/Windows runners.
   binaries:
     name: build ${{ matrix.name }}
-    needs: verify
+    needs: [prepare, verify]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -72,6 +116,7 @@ jobs:
           bun-version: latest
       - name: Stamp version into the binary
         run: |
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
           if [[ "${RELEASE_TAG}" == v* ]]; then
             VER="${RELEASE_TAG#v}"
           else
@@ -100,18 +145,18 @@ jobs:
   # Collect every binary + a combined SHA256SUMS into one GitHub Release.
   release:
     name: github release
-    needs: binaries
-    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+    needs: [prepare, binaries]
+    if: needs.prepare.outputs.should_publish_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Move rolling latest tag
+      - name: Create numbered release tag
         if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f "${RELEASE_TAG}" "${GITHUB_SHA}"
-          git push origin "refs/tags/${RELEASE_TAG}" --force
+          git tag "${{ needs.prepare.outputs.release_tag }}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${{ needs.prepare.outputs.release_tag }}"
       - uses: actions/download-artifact@v4
         with:
           path: dist-bin
@@ -124,10 +169,9 @@ jobs:
           echo "Release assets:" && ls -la
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ needs.prepare.outputs.release_tag }}
           target_commitish: ${{ github.sha }}
-          name: ${{ github.ref == 'refs/heads/main' && 'Latest main build' || env.RELEASE_TAG }}
-          body: ${{ github.ref == 'refs/heads/main' && format('Rolling release for main commit {0}.', github.sha) || '' }}
+          name: ${{ needs.prepare.outputs.release_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           overwrite_files: true
@@ -137,7 +181,7 @@ jobs:
 
   dry-run:
     name: dry-run artifacts
-    needs: binaries
+    needs: [prepare, binaries]
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -153,7 +197,7 @@ jobs:
           echo "Dry-run assets:" && ls -la
       - uses: actions/upload-artifact@v4
         with:
-          name: release-dry-run-${{ env.RELEASE_TAG }}
+          name: release-dry-run-${{ needs.prepare.outputs.release_tag }}
           path: dist-bin/*
           if-no-files-found: error
 
@@ -162,7 +206,7 @@ jobs:
   # because publishing isn't configured yet.
   npm:
     name: publish npm
-    needs: verify
+    needs: [prepare, verify]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     env:
@@ -176,7 +220,9 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Stamp version from tag
-        run: npm pkg set version="${RELEASE_TAG#v}"
+        run: |
+          RELEASE_TAG="${{ needs.prepare.outputs.release_tag }}"
+          npm pkg set version="${RELEASE_TAG#v}"
       - run: npm run build
       - name: Publish to npm
         if: env.NPM_TOKEN != ''
