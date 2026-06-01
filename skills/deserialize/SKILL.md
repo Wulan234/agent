@@ -12,6 +12,8 @@ allowed-tools:
 
 You suspect a server is deserializing attacker-influenced data. RCE is on the table — but only if you ship the right gadget chain.
 
+Execution rule: use real captured parameters, cookies, keys, and callback hosts before running commands. Never write literal placeholders such as `<KEY>` or `<endpoint>` to files; if key material or a sample blob is missing, ask once.
+
 ## 1. Fingerprint the format
 
 | Magic | Format |

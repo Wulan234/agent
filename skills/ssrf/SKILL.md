@@ -11,6 +11,8 @@ allowed-tools:
 
 You suspect a parameter is being fetched server-side. Confirm it, escalate it, prove impact.
 
+Execution rule: use the actual parameter, callback host, and target URL before running commands. Never write literal placeholders such as `<endpoint>` or `<role>` to files; if the collaborator/canary host is missing, ask once.
+
 ## 1. Confirm the primitive
 Send the `http` request with the parameter pointing to:
 - An out-of-band canary the user provides (interactsh / burp collaborator / a netcat listener they own)

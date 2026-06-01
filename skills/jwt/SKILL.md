@@ -12,6 +12,8 @@ allowed-tools:
 
 You have one or more `eyJ...` tokens. The goal is to forge an authenticated token that the server accepts.
 
+Execution rule: use real tokens, URLs, and keys from the scoped target before running commands. Never write literal placeholders such as `<payload-b64>` or `<future>` to files; if a value is missing, ask once.
+
 ## 0. Decode every token you have
 
 Base64url-decode header and payload. Note:

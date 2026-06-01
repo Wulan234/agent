@@ -32,8 +32,9 @@ on a name collision):
 
 1. this built-in `skills/` directory
 2. `./.pentesterflow/skills/` (project-local — scoped to the repo)
-3. `~/.pentesterflow/skills/` (personal)
-4. any dirs passed via `--skills <dir>` or the `skills_dirs` config
+3. `~/.pentesterflow/builtin-skills/` (installer-managed shipped skills)
+4. `~/.pentesterflow/skills/` (personal)
+5. any dirs passed via `--skills <dir>` or the `skills_dirs` config
 
 Use `~/.pentesterflow/skills/` for personal skills you want available
 everywhere, or the project-local `./.pentesterflow/skills/` for skills

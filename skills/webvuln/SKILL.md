@@ -15,6 +15,8 @@ You are testing specific endpoints the user has handed you (or that came out of 
 
 Default to curl and the built-in `http` tool. Do not pull in heavy scanners (nuclei, sqlmap, ffuf, etc.) unless the user explicitly asks for them or you have manually confirmed a bug and need a scanner only to characterize the bug class.
 
+Execution rule: substitute real target values before running commands. Never write literal placeholders such as `<TARGET>`, `<vulnerable-path>`, or `<PoC body>` to files. If a value is unknown, ask once or derive it from `/target`.
+
 ## 1. Triage the target
 Fetch the landing page with the `http` tool or curl. Note:
 - Framework / language signals (cookies, headers, error pages)
@@ -28,9 +30,10 @@ If you spot a versioned product, immediately `web_search "<product> <version> CV
 For each suspected CVE pulled from the advisory, craft the curl that proves it — single request when possible:
 
 ```
-curl -ksS -X POST "https://<TARGET>/<vulnerable-path>" \
+TARGET="https://app.example.com" # replace with the scoped target before running
+curl -ksS -X POST "$TARGET/vulnerable-path" \
   -H 'Content-Type: application/json' \
-  -d '<PoC body>' \
+  -d '{"replace":"with-real-poc-body"}' \
   -w "\nHTTP %{http_code}  size=%{size_download}  time=%{time_total}\n"
 ```
 
@@ -45,8 +48,9 @@ If the advisory describes a recognizable pattern (template injection, deserializ
 Example IDOR sweep with two sessions:
 
 ```
+TARGET="https://app.example.com" # replace with the scoped target before running
 for id in $(seq 1 50); do
-  body=$(curl -ksS -H "Cookie: $SESSION_B" "https://<TARGET>/api/users/$id" | jq -r '.email // empty')
+  body=$(curl -ksS -H "Cookie: $SESSION_B" "$TARGET/api/users/$id" | jq -r '.email // empty')
   [ -n "$body" ] && echo "$id $body"
 done
 ```
@@ -59,8 +63,9 @@ For each parameter (query, body, header, cookie):
 Quick reflected-XSS probe with curl:
 
 ```
+TARGET="https://app.example.com" # replace with the scoped target before running
 for p in q s search query keyword; do
-  curl -ksS "https://<TARGET>/?$p=pf$(date +%s)<svg/onload=alert(1)>" \
+  curl -ksS "$TARGET/?$p=pf$(date +%s)<svg/onload=alert(1)>" \
     | grep -o "pf[0-9]*<svg.*alert(1)>" || true
 done
 ```

@@ -10,6 +10,8 @@ allowed-tools:
 
 # GraphQL playbook
 
+Execution rule: resolve the real GraphQL endpoint first, then run concrete `http`/curl requests against it. Never write literal placeholders such as `<other-id>` to files; ask once if required IDs or sessions are missing.
+
 Standard endpoints to probe first (use `http` with `GET` / `POST`):
 `/graphql`, `/graphiql`, `/api/graphql`, `/v1/graphql`, `/v2/graphql`, `/query`, `/api/query`.
 

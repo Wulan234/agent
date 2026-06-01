@@ -9,6 +9,8 @@
 # Environment overrides:
 #   PENTESTERFLOW_VERSION=v0.1.0      pin a release tag (default: latest)
 #   PENTESTERFLOW_INSTALL_DIR=/path   install location (default: ~/.local/bin)
+#   PENTESTERFLOW_SKILLS_DIR=/path    shipped skills location (default: ~/.pentesterflow/builtin-skills)
+#   PENTESTERFLOW_SKIP_SKILLS=1       install binary only
 set -eu
 
 REPO="${PENTESTERFLOW_REPO:-PentesterFlow/agent}"
@@ -118,6 +120,44 @@ if [ "$os" = darwin ] && command -v xattr >/dev/null 2>&1; then
 fi
 
 info "installed ${BIN} -> ${dest}"
+
+# --- install shipped skills ----------------------------------------------
+if [ "${PENTESTERFLOW_SKIP_SKILLS:-}" != "1" ]; then
+  if [ -n "${PENTESTERFLOW_SKILLS_DIR:-}" ]; then
+    skills_dir="$PENTESTERFLOW_SKILLS_DIR"
+  else
+    [ -n "${HOME:-}" ] || err "HOME is not set; set PENTESTERFLOW_SKILLS_DIR explicitly"
+    skills_dir="$HOME/.pentesterflow/builtin-skills"
+  fi
+
+  if command -v tar >/dev/null 2>&1; then
+    archive_ref="$ver"
+    [ "$archive_ref" = "latest" ] && archive_ref="latest"
+    archive_url="https://github.com/${REPO}/archive/refs/tags/${archive_ref}.tar.gz"
+    info "installing shipped skills -> ${skills_dir}..."
+    if ! dl "$archive_url" "${tmp}/source.tar.gz"; then
+      archive_url="https://github.com/${REPO}/archive/refs/heads/main.tar.gz"
+      dl "$archive_url" "${tmp}/source.tar.gz" || err "download failed: ${archive_url}"
+    fi
+    mkdir -p "${tmp}/source"
+    tar -xzf "${tmp}/source.tar.gz" -C "${tmp}/source" || err "failed to extract skills archive"
+    skills_src=$(find "${tmp}/source" -type d -path "*/skills" | head -n1)
+    if [ -n "$skills_src" ] && [ -d "$skills_src" ]; then
+      skills_stage="${skills_dir}.tmp.$$"
+      rm -rf "$skills_stage"
+      mkdir -p "$skills_stage"
+      cp -R "$skills_src"/. "$skills_stage"/ || err "failed to stage shipped skills"
+      rm -rf "$skills_dir"
+      mkdir -p "$(dirname "$skills_dir")"
+      mv "$skills_stage" "$skills_dir" || err "failed to install shipped skills"
+      info "installed shipped skills -> ${skills_dir}"
+    else
+      info "warning: skills directory not found in source archive — skipping skills install"
+    fi
+  else
+    info "warning: tar not found — skipping skills install"
+  fi
+fi
 
 case ":${PATH:-}:" in
   *":${dir}:"*) : ;;

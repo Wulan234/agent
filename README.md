@@ -264,6 +264,7 @@ server for compatible clients.
 |---|---|
 | `~/.pentesterflow/config.json` | Backend, model, endpoint, and disabled-skill settings. |
 | `~/.pentesterflow/sessions/*.json` | Saved sessions for `--resume`. |
+| `~/.pentesterflow/builtin-skills/<name>/SKILL.md` | Installer-managed shipped skills. |
 | `~/.pentesterflow/skills/<name>/SKILL.md` | Personal skills. |
 | `./.pentesterflow/skills/<name>/SKILL.md` | Project-local skills. |
 | `./findings/<slug>.md` | Confirmed findings for the current engagement. |

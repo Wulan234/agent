@@ -26,6 +26,7 @@ export function skillSearchDirs(
   return [
     resolve(cwd, 'skills'), // built-in
     resolve(cwd, '.pentesterflow', 'skills'), // project-local (repo-scoped)
+    join(home, '.pentesterflow', 'builtin-skills'), // installer-managed shipped skills
     join(home, '.pentesterflow', 'skills'), // personal pentesterflow skills
     ...configured.map((d) => resolve(d)), // explicit --skills / config (wins)
   ];

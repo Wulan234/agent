@@ -24,6 +24,8 @@ email DKIM/SPF includes, ...).
 > someone else's host — drop a benign HTML file (`takeover proof for
 > <handle>, contact <email>`) and stop.
 
+Execution rule: operate on real subdomains and provider fingerprints from the scoped program. Never write literal placeholders such as `<provider>`, `<handle>`, or `<email>` to files; ask once for proof text if a provider requires a claim page.
+
 ## 1. Enumerate every subdomain
 
 Use whatever recon you have. Curl-first sources you can hit without

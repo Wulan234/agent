@@ -14,6 +14,8 @@
   Environment overrides:
     $env:PENTESTERFLOW_VERSION     = 'v0.1.0'   # pin a release (default: latest)
     $env:PENTESTERFLOW_INSTALL_DIR = 'C:\path'  # install location
+    $env:PENTESTERFLOW_SKILLS_DIR  = 'C:\path'  # shipped skills location
+    $env:PENTESTERFLOW_SKIP_SKILLS = '1'        # install binary only
     $env:PENTESTERFLOW_REPO        = 'owner/repo'
 #>
 
@@ -97,6 +99,49 @@ try {
   Copy-Item -Force -Path $download -Destination $staged
   Move-Item -Force -LiteralPath $staged -Destination $dest
   Write-Host "installed $Bin -> $dest"
+
+  # --- install shipped skills --------------------------------------------
+  if ($env:PENTESTERFLOW_SKIP_SKILLS -ne '1') {
+    $skillsDir = if ($env:PENTESTERFLOW_SKILLS_DIR) {
+      $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($env:PENTESTERFLOW_SKILLS_DIR)
+    } else {
+      Join-Path $env:USERPROFILE '.pentesterflow\builtin-skills'
+    }
+
+    $archiveRef = $ver
+    $archiveUrl = "https://github.com/$Repo/archive/refs/tags/$archiveRef.zip"
+    $archive = Join-Path $tmp 'source.zip'
+    try {
+      Write-Host "installing shipped skills -> $skillsDir..."
+      try {
+        Invoke-WebRequest -Uri $archiveUrl -OutFile $archive -UseBasicParsing -ErrorAction Stop
+      } catch {
+        $archiveUrl = "https://github.com/$Repo/archive/refs/heads/main.zip"
+        Invoke-WebRequest -Uri $archiveUrl -OutFile $archive -UseBasicParsing -ErrorAction Stop
+      }
+
+      $sourceRoot = Join-Path $tmp 'source'
+      Expand-Archive -Path $archive -DestinationPath $sourceRoot -Force
+      $skillsSrc = Get-ChildItem -Path $sourceRoot -Directory -Recurse |
+        Where-Object { $_.Name -eq 'skills' } |
+        Select-Object -First 1
+
+      if ($skillsSrc) {
+        $skillsStage = "$skillsDir.tmp.$PID"
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue -LiteralPath $skillsStage
+        New-Item -ItemType Directory -Force -Path $skillsStage | Out-Null
+        Copy-Item -Recurse -Force -Path (Join-Path $skillsSrc.FullName '*') -Destination $skillsStage
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue -LiteralPath $skillsDir
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $skillsDir) | Out-Null
+        Move-Item -Force -LiteralPath $skillsStage -Destination $skillsDir
+        Write-Host "installed shipped skills -> $skillsDir"
+      } else {
+        Write-Warning 'skills directory not found in source archive; skipping skills install'
+      }
+    } catch {
+      Write-Warning "skills install skipped: $($_.Exception.Message)"
+    }
+  }
 
   # --- add to user PATH --------------------------------------------------
   $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')

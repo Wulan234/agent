@@ -12,6 +12,8 @@ allowed-tools:
 
 You suspect user input is concatenated into a server-side template. The classic tell: `{{7*7}}` renders as `49` (not as the literal). But that's only the start — to file a real bug you must identify the engine, then prove RCE or read sensitive state.
 
+Execution rule: send probes to the real reflected parameter or template sink before escalating. Never write literal placeholder values to files; if the sink is unknown, first discover it with `http`/curl.
+
 ## 1. Fingerprint the engine — fast
 
 Use `read_payloads(skill="ssti", file="fingerprint-polyglot.txt")` for the canonical multi-engine probe:

@@ -11,6 +11,8 @@ allowed-tools:
 
 Confirm the target is in scope for stress-style testing (multiple parallel requests can look like abuse). Then identify the candidate operation.
 
+Execution rule: capture a real request for the operation and replay that request with concrete cookies/body values. Never write literal placeholders such as `<sess>` to files; ask once if a session or replayable request is missing.
+
 ## Targets worth racing
 
 - Redeem a gift card / promo code (does the second redeem succeed?)

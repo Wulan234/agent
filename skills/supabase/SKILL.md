@@ -29,6 +29,8 @@ entire bug class:
 > whole tables of real PII, never mass-modify, never `DELETE` real rows. The PoC is "I read/wrote
 > one row I shouldn't be able to", not "I exfiltrated the customer base".
 
+Execution rule: substitute the real Supabase project ref, anon key, table, and marker IDs before running commands. Never write literal placeholders such as `<ref>`, `<table>`, `<col>`, or `<returned-id>` to files; if a value is unknown, discover it first or ask once.
+
 ---
 
 ## 0. Find the project URL + anon key in the frontend JS

@@ -17,6 +17,7 @@ import * as config from '../config/config.js';
 import { CoverageStore } from '../coverage/store.js';
 import { Store as FindingsStore } from '../findings/store.js';
 import * as llmFactory from '../llm/factory.js';
+import { modelReliabilityWarning } from '../llm/modelWarnings.js';
 import { detectOllamaContextWindow, probeToolSupport } from '../llm/probe.js';
 import * as logger from '../logger/logger.js';
 import { YoloPrompter } from '../permission/permission.js';
@@ -495,6 +496,11 @@ async function main(): Promise<number> {
   // swap re-probes the new model.
   const runProbes = async (signal: AbortSignal): Promise<void> => {
     bannerHolder.publish?.({ toolSupport: 'probing', contextWindow: undefined });
+    const modelWarning = modelReliabilityWarning(cfg.backend, agent.client.model());
+    if (modelWarning) {
+      process.stderr.write(`${modelWarning}\n`);
+      noticeHolder.publish?.(modelWarning);
+    }
     const probeP = probeToolSupport(agent.client, signal).then((r) => {
       bannerHolder.publish?.({ toolSupport: r.toolSupport });
       if (r.toolSupport === 'no' && r.detail) {
